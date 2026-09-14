@@ -4,6 +4,7 @@ Independent secondary dose / monitor-unit check for fixed-cone cranial stereotac
 radiosurgery, for Elekta and Aktina cones on an Elekta Versa HD.
 
 [Landing page](https://kkaan.github.io/conesrs-releases/) ·
+[Validation specification](https://kkaan.github.io/conesrs-releases/specification.html) ·
 [Releases](https://github.com/kkaan/conesrs-releases/releases)
 
 This repository contains selected runnable source, release documentation and the
@@ -82,6 +83,12 @@ Output: `dist/ConeSRS/ConeSRS.exe`. The published ZIP also includes this README
 and the example machine mapping. SHA-256 checksums accompany each release.
 
 ## Scope and interpretation
+
+Physicists evaluating the calculation should read the
+[functional and validation specification](Cone-SRS-Secondary-MU-Check-Spec.md)
+(Kaan, 10/07/2026; revised draft). It describes the formalism, current behaviour,
+known scope-enforcement gaps and validation requirements. It is not a clinical
+validation report.
 
 - Fixed cones, per-beam cone sizes, a single prescription-point isocentre.
 - Uses exported DICOM-RT and measured-data factors independently of the TPS.

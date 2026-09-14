@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ConeSRS functional and validation specification: calculation, assumptions, implementation limits and commissioning requirements for physicist review.">
+  <meta name="theme-color" content="#00a869">
+  <title>Functional and validation specification | ConeSRS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header wrap">
+    <a class="brand" href="./" aria-label="ConeSRS home"><img src="assets/gc-logo-green.svg" alt="GenesisCare" width="185" height="44"><span>ConeSRS</span></a>
+    <nav aria-label="Main navigation"><a href="./">Home</a><a href="https://github.com/kkaan/conesrs-releases/blob/main/Cone-SRS-Secondary-MU-Check-Spec.md">Markdown source</a></nav>
+  </header>
+  <main id="main" class="wrap spec-layout">
+    <nav class="spec-contents" aria-label="Specification contents"><h2>Contents</h2><ol><li><a href="#1-purpose-and-scope">1. Purpose and scope</a></li>
+<li><a href="#2-background-and-justification">2. Background and justification</a></li>
+<li><a href="#3-system-overview">3. System overview</a></li>
+<li><a href="#4-functional-requirements-and-current-behaviour">4. Functional requirements and current behaviour</a></li>
+<li><a href="#5-preconditions-and-known-enforcement-gaps">5. Preconditions and known enforcement gaps</a></li>
+<li><a href="#6-tolerances-and-action-limits">6. Tolerances and action limits</a></li>
+<li><a href="#7-independence-specification">7. Independence specification</a></li>
+<li><a href="#8-validation-specification">8. Validation specification</a></li>
+<li><a href="#9-assumptions-and-limitations">9. Assumptions and limitations</a></li>
+<li><a href="#10-platform-and-software-requirements">10. Platform and software requirements</a></li>
+<li><a href="#11-versioning-and-future-extensions">11. Versioning and future extensions</a></li>
+<li><a href="#12-references">12. References</a></li></ol></nav>
+    <article class="spec-document">
+      <p class="product">ConeSRS / Physicist validation</p>
+<h1>Independent Secondary Dose/MU Check for Fixed-Cone Cranial SRS</h1>
+<h2 id="functional-and-validation-specification">Functional and Validation Specification</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Document type</td>
+<td>Functional and validation specification</td>
+</tr>
+<tr>
+<td>Version</td>
+<td>0.3 (revised draft for physicist review)</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>Provisional; clinical validation and sign-off outstanding</td>
+</tr>
+<tr>
+<td>Scope</td>
+<td>Fixed-cone cranial SRS, single target at isocentre</td>
+</tr>
+<tr>
+<td>Beam models</td>
+<td>Elekta cones and Aktina cones on Elekta Versa HD</td>
+</tr>
+<tr>
+<td>Author</td>
+<td>Kaan</td>
+</tr>
+<tr>
+<td>Date</td>
+<td>10/07/2026</td>
+</tr>
+<tr>
+<td>Revision review</td>
+<td>15/09/2026; checked against the current source implementation</td>
+</tr>
+</tbody>
+</table>
+<p>The document date is 10 July 2026. This revision distinguishes intended requirements from current implementation and outstanding validation work. It is not a commissioning report or evidence of clinical acceptance. Both bundled beam models remain unvalidated.</p>
+<p>Changes from v0.2 include required RTDOSE input, per-beam cone sizes, the actual arc-sampling and contour-depth methods, per-fraction reporting, implemented tolerance bands, and explicit gaps in scope enforcement. Unsupported quantitative claims about small-field accuracy have been removed.</p>
+<h2 id="1-purpose-and-scope">1. Purpose and scope</h2>
+<p>ConeSRS is an independent secondary point-dose and monitor-unit (MU) check for fixed-cone cranial stereotactic radiosurgery. It reads exported DICOM-RT objects, calculates dose at the plan isocentre from measured beam data, and compares that dose with the TPS dose sampled at the same point. It provides a Windows desktop single-plan workflow and command-line single-plan and batch workflows.</p>
+<p>The intended clinical scope is one target at a common isocentre, with a fixed cone for each treatment beam. Different beams may use different cone diameters from the same configured beam model. MLC-modulated, multi-isocentre, off-isocentre and multi-target treatments are outside the intended scope. Current implementation gaps in enforcing these restrictions are listed in Section 5; an accepted software result does not prove that every scope restriction was checked.</p>
+<h2 id="2-background-and-justification">2. Background and justification</h2>
+<p>Independent dose/MU verification is part of radiotherapy quality assurance. Relevant guidance includes AAPM-RSS MPPG 9.b for SRS/SBRT, the ACPSEM position paper on pre-treatment checks, and ARPANSA's radiotherapy safety guide. TG-71 provides a conventional MU-calculation framework; TG-219 discusses commissioning, independence and limitations of secondary calculations for IMRT. Applying those principles here does not establish that this particular cone calculation is clinically validated or that it satisfies every requirement of those publications. See the linked primary references in Section 12.</p>
+<p>A measured-data cone calculation provides a transparent secondary calculation without a TPS scripting interface or TPS-reconstructed beam tables. Its suitability must be established for each local machine, energy, cone model and intended plan class through commissioning and independent dosimetric checks.</p>
+<h2 id="3-system-overview">3. System overview</h2>
+<p>The calculation uses a homogeneous-water, factor-based model. Geometry reconstructed from RTSTRUCT provides a physical path length from the body entry point to isocentre. The engine combines that depth with beam MU, reference dose per MU, cone output factors and measured-PDD-derived depth corrections.</p>
+<p>There is no CT-density integration, Monte Carlo transport, convolution calculation or off-axis dose reconstruction. The graphical interface and reports render the same headless calculation result. Patient data is processed locally; public documentation and source do not include patient DICOM data.</p>
+<h2 id="4-functional-requirements-and-current-behaviour">4. Functional requirements and current behaviour</h2>
+<h3 id="4-1-inputs">4.1 Inputs</h3>
+<p>The current comparison requires a matched set of:</p>
+<ul>
+<li><strong>RTPLAN:</strong> treatment-machine name, beam MU, applicator identifiers, gantry endpoints and rotation direction, couch and collimator angles, isocentre, fraction count and prescription when available.</li>
+<li><strong>RTSTRUCT:</strong> body contour and a PTV/GTV target candidate, identified by interpreted type or name.</li>
+<li><strong>RTDOSE:</strong> TPS dose grid for comparison at isocentre. There is no fallback to RTPLAN BeamDose when the grid is absent.</li>
+</ul>
+<p>The matcher uses DICOM references to associate the objects. CT images are not used by the current calculation. Retaining CT in a local validation dataset can support a separate assessment of heterogeneity, but does not make this engine heterogeneity-corrected.</p>
+<p>Machine configuration selects the beam model from TreatmentMachineName. Applicator labels resolve cone diameter and cannot select a different model. Cone matching permits a 0.05 mm diameter tolerance.</p>
+<h3 id="4-2-reference-beam-data">4.2 Reference beam data</h3>
+<p>Each versioned beam model contains reference dose per MU, cone output factors, depth-correction tables and provenance/validation metadata. PDD scans are converted during data build; off-centre profiles are not used in the current point-dose calculation.</p>
+<p>The intended reference is 10 cm depth at 90 cm SSD, giving a source-to-reference distance of 100 cm. Reference dose per MU and output factors must describe compatible irradiation conditions at this point. If calibration is supplied at another depth or setup, a physicist must establish and document the conversion before building the model; the software does not infer it.</p>
+<p>The build checks that the reference depth is within the DCF table and that DCF there is unity within 0.0001. This numerical normalisation check <strong>cannot verify</strong> the actual measurement setup, detector correction, output-factor reference or absolute calibration. Those require independent review of the commissioning records.</p>
+<p>Use measured data with documented detector response corrections and uncertainty, not TPS-reconstructed or golden-beam exports. Record measurement date, machine/energy, detector, setup, corrections, reference calibration, processing and model version. The bundled Aktina and Elekta models are provisional and unvalidated; their presence in a release does not qualify them for another machine.</p>
+<h3 id="4-3-calculation-formalism">4.3 Calculation formalism</h3>
+<p>With depths and SSD in centimetres, the data-build conversion is:</p>
+<pre><code>DCF(c, d) = [PDD(c, d) / PDD(c, 10)] × [(90 + d) / 100]^2
+</code></pre>
+<p>The implementation accepts explicit SSD and reference-depth parameters; the expression above states the intended reference setup. PDD need not originally be normalised at 10 cm because the ratio removes its normalisation. DCF(c, 10) is unity by construction.</p>
+<p>The squared-distance term removes the inverse-square component of fixed-SSD measurement geometry. It is an approximation to a fixed-source-distance depth function, not a complete measured TMR conversion. No phantom-scatter correction is implemented. Its effect must be quantified during validation rather than assumed to be sub-percent.</p>
+<p>For the angular samples in a plan:</p>
+<pre><code>D_calc = Σ_i [MU_i × D_ref × OF(c_i) × DCF(c_i, d_i)]
+</code></pre>
+<p>Here MU_i is the MU assigned to sample i, D_ref is cGy/MU at the reference point, c_i is that beam's cone diameter, and d_i is the physical water-equivalent depth to isocentre. Geometry uses millimetres internally. OF is fixed within a beam but may differ between beams. The off-axis factor is unity because dose is calculated at isocentre, not at an offset target centroid. There is no additional per-beam inverse-square term: the source-to-isocentre distance is fixed at 1000 mm in the current engine.</p>
+<p>All displayed comparison doses are <strong>cGy per fraction</strong>. PLAN RTDOSE is converted from Gy and divided by the planned fraction count; FRACTION RTDOSE is converted from Gy without division. Other summation types are rejected. The percentage difference is:</p>
+<pre><code>100 × (D_calc − D_TPS_point) / D_TPS_point
+</code></pre>
+<p>The TPS point dose is trilinearly sampled at isocentre. A sphere-averaged TPS dose (default diameter 2 mm) is supplementary context; it does not drive the tolerance flag and is not an independently calculated mean dose.</p>
+<p>When a prescription is available, MU consistency is D_calc / D_prescribed_per_fraction. Under a uniform scaling of all beam MUs this equals planned MU divided by the MU needed to reproduce the prescription. It is not an independent optimisation of the individual beam MUs. The current implementation treats the RTPLAN prescription as a course dose and divides by the fraction count.</p>
+<h3 id="4-4-geometry-and-depth-determination">4.4 Geometry and depth determination</h3>
+<p>The engine constructs a central ray from gantry and fixed couch angle using its machine-coordinate model. It selects a body candidate from interpreted type/name and applies contour filtering to remove disconnected fragments/couch components. This heuristic requires review, especially where couch and body contours are merged.</p>
+<p>The current surface uses <strong>nearest-slice polygon membership</strong>, with a half-median-slice-spacing tolerance for multiple slices; it does not interpolate contours between slices. A ray march at 1 mm intervals finds the first outside-to-inside transition, then bisection refines it. Depth is the Euclidean distance from that entry to isocentre. Internal air, bone and tissue density are not modelled. A single-slice surface has no finite axial-extent tolerance and must not be treated as an adequate clinical body contour.</p>
+<p>Validation must assess contour spacing, truncation, oblique/non-coplanar entry, patient orientation and coordinate signs. A smooth-looking display is not evidence of accurate radiological depth.</p>
+<h3 id="4-5-arc-and-static-field-handling">4.5 Arc and static-field handling</h3>
+<p>The current parser retains each beam's first/last gantry angles and initial couch angle. The engine samples the directed sweep at approximately 2° bin midpoints and distributes total beam MU uniformly in angle. It does <strong>not</strong> use intermediate cumulative meterset weights, gantry reversals or changing couch angles.</p>
+<p>Equal start and end angles are currently interpreted as a 360° sweep. Consequently, <strong>static-field delivery is not correctly represented and is not supported by this implementation</strong>. It must not be treated as a validated degenerate arc. Validation must establish that the supported exports use the assumed monotonic sweep, fixed couch and uniform MU-per-degree delivery; otherwise the parser/calculation requires extension before use.</p>
+<h3 id="4-6-outputs-and-reports">4.6 Outputs and reports</h3>
+<p>Completed checks report patient/plan identifiers, machine/model/version, cones used, independent and TPS point doses per fraction, percentage difference, supplementary TPS sphere dose, MU consistency when available, MU-weighted mean depth, sampled depth plots, warnings and tolerance status. The current result object does not retain a separate prescription-dose field or a separate absolute-dose-difference field for reporting.</p>
+<p>ACCEPTED means the calculation completed; PASS, REVIEW or ACTION describes its dose comparison. REJECTED means not checked within the implemented preconditions. ERROR means processing failed. ACTION is not a processing error, and PASS is not clinical authorisation. An unvalidated model produces an UNVALIDATED MODEL warning.</p>
+<h3 id="4-7-batch-processing">4.7 Batch processing</h3>
+<p>Command-line batch processing walks a folder, processes matched sets, generates reports for completed checks, and writes summary.csv and skipped.txt. Rejections and processing failures are recorded so one failed plan does not abort remaining checks. The check command requires exactly one plan set. Desktop batch processing, the beam-data import wizard and settings workflow remain unimplemented.</p>
+<h2 id="5-preconditions-and-known-enforcement-gaps">5. Preconditions and known enforcement gaps</h2>
+<p>Clinical acceptance requires one supported machine/energy, a common isocentre for all treatment control points, a suitable target at that point, complete usable body contours, supported cone apertures, compatible dose/fraction basis and depths within measured data. Every treatment beam must be accounted for; a partial-beam sum must never be accepted as a whole-plan comparison.</p>
+<p>Current checks include machine/model resolution, cone availability, parked MLCX data, target proximity, usable body-surface selection, sampled ray intersections, DCF depth range, positive TPS dose at isocentre, grid coverage and PLAN/FRACTION summation type. GUI prevalidation aggregates static blockers; geometry-dependent failures can still appear on Run.</p>
+<p>The following are <strong>implementation limitations to resolve or explicitly exclude in the validation protocol</strong>, not completed safeguards:</p>
+<ul>
+<li>The parser takes the first available isocentre and first fraction group; it does not verify every treatment control point shares that isocentre or fully handle multiple fraction groups. Machine consistency and supported energy must also be independently verified.</li>
+<li>The target selector chooses the nearest PTV/GTV candidate and averages its polygon centroids. This is not a volume-weighted centroid or a proof that only one target exists. The current proximity threshold is 5 mm; it does not justify treating an off-axis prescription point as on-axis.</li>
+<li>GUI prevalidation flags excluded treatment beams, but direct engine/headless checking can calculate the remaining supported beams when another treatment beam fails cone/MLC checks. Whole-plan rejection for mixed supported/unsupported treatment beams is not consistently enforced.</li>
+<li>Missing MLCX data excludes a beam because parked leaves cannot be confirmed. Static fields, nonuniform angular MU, couch motion and gantry reversals are not faithfully reconstructed (Section 4.5).</li>
+<li>Invalid fraction counts are not comprehensively rejected; zero is currently replaced by one in the calculation. Positive, correctly interpreted fraction counts must be verified.</li>
+<li>A ray that intersects a surface does not prove complete or correct contour coverage; single-slice and couch-merged contours are particular limitations.</li>
+</ul>
+<p>Current soft warnings include an unvalidated model and a dose grid coarser than approximately 1 mm (0.05 mm numerical allowance). Automatic warnings for bone/air traversal, superficial targets or unusual cohort-relative depth profiles are <strong>not implemented</strong>.</p>
+<h2 id="6-tolerances-and-action-limits">6. Tolerances and action limits</h2>
+<p>Current bands use the <strong>largest cone diameter in the plan</strong> and the absolute percentage difference against the TPS point dose:</p>
+<table>
+<thead>
+<tr>
+<th>Largest cone diameter</th>
+<th>PASS</th>
+<th>REVIEW</th>
+<th>ACTION</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Greater than 10 mm</td>
+<td>≤ 3%</td>
+<td>&gt; 3% and ≤ 5%</td>
+<td>&gt; 5%</td>
+</tr>
+<tr>
+<td>10 mm or smaller</td>
+<td>≤ 5%</td>
+<td>&gt; 5% and ≤ 8%</td>
+<td>&gt; 8% (provisional)</td>
+</tr>
+</tbody>
+</table>
+<p>Equality remains in the lower-severity band. These values are implemented constants, not user-configurable GUI settings. They are working limits pending local validation, with the small-cone 8% action threshold explicitly provisional. Mixed-cone plans inherit the largest-cone band and require assessment in the validation cohort.</p>
+<p>Final limits and any restricted cone/depth range must be justified from local bias, spread, uncertainty and clinical risk. Neither these bands nor an IMRT guideline alone establish a clinically acceptable cone-specific limit.</p>
+<h2 id="7-independence-specification">7. Independence specification</h2>
+<p>The factor calculation is algorithmically separate from a TPS dose engine and does not obtain its factors through TPS model reconstruction. However, using the same commissioning scans as the TPS leaves shared measurement errors. Raw measurement origin alone does not establish full independence.</p>
+<p>Review detector suitability, small-field output correction factors, calibration and setup against TRS-483 and local commissioning evidence. Cross-check small-cone output factors using an appropriate independent measurement/audit, with documented uncertainty. Shared errors cannot be bounded by agreement between two calculations that inherit them. Also assess shared DICOM export errors and independently confirm geometry and MU interpretation.</p>
+<h2 id="8-validation-specification">8. Validation specification</h2>
+<p>Validation is prospective work, performed separately for each machine/energy/beam model and supported delivery class. Record the exact software revision, beam-data version/checksum, configuration, input export conventions, validation date and reviewers.</p>
+<p><strong>Reference and unit checks.</strong> Independently reproduce the reference-point dose from MU, D_ref and OF. Verify PDD conversion, cm/mm and Gy/cGy handling, PLAN/FRACTION reconciliation, prescription interpretation and cone interpolation. A DCF normalisation test alone is insufficient to verify absolute calibration.</p>
+<p><strong>Geometry and delivery checks.</strong> Use independent known-geometry phantoms and hand calculations to test gantry/couch signs, non-coplanar entry, contour spacing, truncation and depth. Check angular convergence against finer sampling, beam-MU conservation, endpoint wraparound and delivery assumptions. Test the Section 5 gaps, including mixed invalid beams, multiple isocentres, static fields and invalid fractions, and document any unresolved exclusions before clinical acceptance.</p>
+<p><strong>Dosimetric dataset.</strong> Evaluate a stratified cohort spanning clinically intended cone sizes, depths, target locations, non-coplanar arcs and mixed-cone plans. Compare like-for-like absolute point doses with a commissioned TPS and suitable independent phantom measurements. A detector-volume mean is not interchangeable with a mathematical point dose; model or quantify the difference. Gamma alone does not validate absolute point-dose accuracy.</p>
+<p><strong>Depth-drift residual.</strong> For each cone, assess disagreement versus depth to test the inverse-square-only PDD conversion. Include the smallest cones and compare with suitable independent measurements. A flat residual against the TPS is supporting evidence, not proof of the approximation or of independence.</p>
+<p><strong>Confounders and uncertainty.</strong> Stratify by commissioning/software era where needed. Account for measurement corrections, positioning, detector averaging, TPS grid/interpolation and Monte Carlo noise, contour geometry and the homogeneous-water approximation. Do not assume a universal SRS MapCHECK under-response threshold, a universal safe cone diameter or a fixed 1–2% water-equivalence error.</p>
+<p><strong>Acceptance and ongoing QA.</strong> A qualified physicist must establish numerical acceptance criteria before evaluating the validation cohort, resolve safety-critical scope gaps, document the supported range, and sign off the software plus beam data. TPS agreement alone is insufficient. Maintain regression cases and revalidate affected behaviour after software, model or commissioning changes. A model's validated flag is metadata, not a substitute for the signed evidence.</p>
+<h2 id="9-assumptions-and-limitations">9. Assumptions and limitations</h2>
+<ul>
+<li>Homogeneous water replaces patient heterogeneity; errors near skull, air cavities and superficial targets must be measured or otherwise quantified.</li>
+<li>PDD conversion omits scatter corrections; its accuracy is not established by reference normalisation.</li>
+<li>Contour-based entry uses nearest slices and heuristic body selection, with no CT voxel-density integration or couch attenuation model.</li>
+<li>Dose is computed only at the chosen plan isocentre, with unity off-axis factor. No target mean dose or independent DVH is calculated.</li>
+<li>Uniform angular MU and fixed couch are assumed. Static-field and comprehensive control-point reconstruction remain gaps.</li>
+<li>Shared commissioning/export provenance and incomplete input enforcement limit independence and applicability.</li>
+</ul>
+<h2 id="10-platform-and-software-requirements">10. Platform and software requirements</h2>
+<p>The desktop target is Windows. Selected source requires Python 3.11+, numpy, scipy, pydicom, reportlab, matplotlib and PySide6. CSV output uses the Python standard library; pandas and PyMedPhys are not current dependencies. PySide6 is confined to the GUI, which uses QPainter rather than VTK, PyVista or OpenGL.</p>
+<p>Distribution is a managed Python environment or a Windows executable folder, with model/configuration files. Keep the whole executable distribution together. Verify performance and operation on the actual target workstation; no hardware specification alone establishes clinical suitability.</p>
+<h2 id="11-versioning-and-future-extensions">11. Versioning and future extensions</h2>
+<p>The current evaluation version provides homogeneous-water point-dose checking, per-plan PDF reports, command-line batch CSV output and a desktop single-check workspace. Clinical release requires the validation and gap resolution described above.</p>
+<p>Future options include faithful control-point/static-field handling, stronger input enforcement, GUI batch processing and beam-data import/validation workflows. Measured-profile three-dimensional dose reconstruction, target mean dose/DVH, and CT-based heterogeneity correction are separate future developments requiring their own validation; they are not current capabilities.</p>
+<h2 id="12-references">12. References</h2>
+<ul>
+<li>Cirino E, Benedict SH, Dupre PJ, et al. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11969102/">AAPM-RSS Medical Physics Practice Guideline 9.b: SRS-SBRT</a>. J Appl Clin Med Phys. 2025;26(4):e14624.</li>
+<li>Zhu TC, Stathakis S, Clark JR, et al. <a href="https://doi.org/10.1002/mp.15069">Report of AAPM Task Group 219 on independent calculation-based dose/MU verification for IMRT</a>. Med Phys. 2021;48:e808-e829.</li>
+<li>Gibbons JP, Antolak JA, Followill DS, et al. <a href="https://doi.org/10.1118/1.4864244">Monitor unit calculations for external photon and electron beams: AAPM TG-71</a>. Med Phys. 2014;41(3):031501.</li>
+<li>Fog LS, Webb LK, Barber J, et al; ACPSEM ROSG. <a href="https://doi.org/10.1007/s13246-023-01367-9">Pre-treatment patient specific plan checks and quality assurance in radiation oncology</a>. Phys Eng Sci Med. 2024;47(1):7-15.</li>
+<li>International Atomic Energy Agency. <a href="https://www-pub.iaea.org/MTCD/Publications/PDF/D483_web.pdf">Dosimetry of Small Static Fields Used in External Beam Radiotherapy</a>. Technical Reports Series No. 483. IAEA; 2017.</li>
+<li>Australian Radiation Protection and Nuclear Safety Agency. <a href="https://www.arpansa.gov.au/sites/default/files/legacy/pubs/rps/rps14_3.pdf">Safety Guide for Radiation Protection in Radiotherapy</a>. Radiation Protection Series No. 14.3. ARPANSA; 2008.</li>
+</ul>
+
+    </article>
+  </main>
+  <footer class="wrap"><span>ConeSRS · Functional and validation specification</span><a href="./">Back to home</a></footer>
+</body>
+</html>
