@@ -1,0 +1,4 @@
+{
+  "machines": {"YOUR_DICOM_MACHINE_NAME": "your-model"},
+  "models": {"your-model": "beam-data/your-model.beamdata.json"}
+}
