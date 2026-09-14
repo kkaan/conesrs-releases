@@ -27,6 +27,7 @@ include = ["conesrs*"]
 
 [tool.setuptools.package-data]
 "conesrs.config" = ["machines.default.json"]
+"conesrs.data" = ["models/aktina.beamdata.json", "models/elekta.beamdata.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -14,7 +14,8 @@ changes to this mirror may be replaced on the next publication.
 
 Provisional software for evaluation. A public download does not establish clinical
 validation. Commission and independently validate the calculation and your beam
-data before clinical use. No commissioned beam models or patient data are included.
+data before clinical use. The bundled Aktina and Elekta models are provisional and
+unvalidated. No patient data is included.
 Models marked unvalidated produce a prominent warning on every result.
 
 ## Windows download
@@ -24,8 +25,19 @@ extract the **whole folder**, then run `ConeSRS.exe`. Keep `_internal` beside th
 executable. Python is not required for this build. The landing page reports when
 no downloadable release has been published yet.
 
-The default configuration is empty. To check a plan, supply your local model and
-machine mapping. Copy `machines.example.json` to `machines.json`, replace the
+The download includes the current Aktina and Elekta beam models and these default
+machine mappings. Launch `ConeSRS.exe` directly to use them.
+
+| Model | DICOM machine names | Cone diameters (mm) |
+| --- | --- | --- |
+| Aktina | Amaroo, RedGum | 5, 7, 9, 11, 13, 15, 17, 19, 21 |
+| Elekta | Banksia, Jesse, Nala | 5, 7.5, 10, 12.5, 15 |
+
+Both models retain their original checksums, measured values and **unvalidated**
+status. Confirm that the model and machine mapping are appropriate for your setup.
+
+For a different machine mapping or model, copy `machines.example.json` to
+`machines.json`, replace the
 example machine name with the exact DICOM TreatmentMachineName, and point the
 model path at your locally commissioned `.beamdata.json` file. Relative paths
 are resolved against the configuration file's directory.

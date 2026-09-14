@@ -1,4 +1,13 @@
 {
-  "machines": {},
-  "models": {}
+  "machines": {
+    "Amaroo": "aktina-cones",
+    "RedGum": "aktina-cones",
+    "Banksia": "elekta-cones",
+    "Jesse": "elekta-cones",
+    "Nala": "elekta-cones"
+  },
+  "models": {
+    "aktina-cones": "../data/models/aktina.beamdata.json",
+    "elekta-cones": "../data/models/elekta.beamdata.json"
+  }
 }

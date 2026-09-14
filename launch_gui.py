@@ -24,16 +24,23 @@ def main():
         def check():
             from conesrs.engine.result import PlanCheckResult
             from conesrs.report.pdf import write_pdf
+            from conesrs.data.formats import load_beam_data
             # Exercise packaged Qt, report fonts, and matplotlib resources.
             exit_code = 0
             try:
+                beam_models = {}
+                for model_id in config.models:
+                    model = load_beam_data(config.model_path(model_id))
+                    beam_models[model_id] = {"validated": model.validated,
+                                            "cones_mm": sorted(model.cones)}
                 pdf = args.self_test.with_suffix(".pdf")
                 write_pdf(PlanCheckResult(status="ACCEPTED", model_id="synthetic",
                           tolerance_flag="PASS", d_calc_cgy_per_fx=100,
                           d_tps_cgy_per_fx=100, percent_diff=0,
                           depth_profile=((0, 40), (90, 50))), pdf, timestamp="Synthetic smoke test")
                 args.self_test.write_text(json.dumps({"ok": pdf.is_file(),
-                    "machines": config.machines, "models": config.models}), encoding="utf-8")
+                    "machines": config.machines, "models": config.models,
+                    "beam_models": beam_models}), encoding="utf-8")
             except Exception as exc:
                 exit_code = 1
                 args.self_test.write_text(json.dumps({"ok": False, "error": str(exc)}), encoding="utf-8")

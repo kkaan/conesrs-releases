@@ -30,7 +30,7 @@
         <p>One desktop workspace for plan geometry, preconditions and dose comparison.</p>
         <p id="release-status" role="status">Checking for a downloadable release…</p>
         <a id="release-link" class="button primary" href="https://github.com/kkaan/conesrs-releases/releases">Browse releases</a>
-        <p class="small">Download the ZIP and extract the whole folder. Your commissioned beam data is supplied separately.</p>
+        <p class="small">Download the ZIP and extract the whole folder. Includes provisional Aktina and Elekta beam models.</p>
         <a class="text-link" href="https://github.com/kkaan/conesrs-releases/releases">Release notes &amp; checksums</a>
       </aside>
     </section>
@@ -43,8 +43,8 @@
         <dl><div><dt>Read the exported plan</dt><dd>Match RTPLAN, RTSTRUCT and RTDOSE by their references, then surface the plan’s scope and input checks.</dd></div><div><dt>Recompute the dose</dt><dd>Combine beam monitor units, reference dose, cone output factors and depth corrections in a measured-data calculation.</dd></div><div><dt>Review the comparison</dt><dd>Compare dose per fraction at isocentre and export a PDF. Headless batch processing also produces a CSV summary.</dd></div></dl>
       </div>
     </section>
-    <section class="wrap start" id="start"><div><h2>Bring your plan.<br>Use your beam data.</h2><p>The public build starts with an empty machine configuration. Supply your locally commissioned model before running a check.</p><a class="text-link" href="https://github.com/kkaan/conesrs-releases#run-the-selected-source">Read the setup guide</a></div>
-      <ol><li><h3>Extract and configure</h3><p>Extract the Windows ZIP. Copy the example machine mapping and point it to your beam-data JSON.</p></li><li><h3>Open the plan</h3><p>Launch with <code>--config machines.json</code>, open an RTPLAN and review the matched structures, dose and preconditions.</p></li><li><h3>Run and review</h3><p>Run the independent check, inspect the comparison and save the PDF report.</p></li></ol>
+    <section class="wrap start" id="start"><div><h2>Bring your plan.<br>Review your beam data.</h2><p>Provisional Aktina and Elekta models are bundled with the existing machine mappings. Both remain unvalidated. You can also supply your own configuration.</p><a class="text-link" href="https://github.com/kkaan/conesrs-releases#windows-download">Read the setup guide</a></div>
+      <ol><li><h3>Extract and launch</h3><p>Extract the whole Windows ZIP and launch ConeSRS.exe. Python is not required.</p></li><li><h3>Open the plan</h3><p>Open an RTPLAN and review the matched structures, dose, selected beam model and preconditions.</p></li><li><h3>Run and review</h3><p>Run the independent check, inspect the comparison and save the PDF report.</p></li></ol>
     </section>
     <section class="wrap validation"><h2>Validation belongs with the data.</h2><p>ConeSRS is provisional software for evaluation. A public release does not establish clinical validation. Commission and independently validate the calculation and your beam models before clinical use. Unvalidated models remain clearly flagged; unsupported plans are rejected.</p><p class="small">The beam-data import wizard and desktop batch flow are still in development. Batch processing is available from the command line.</p></section>
   </main>
